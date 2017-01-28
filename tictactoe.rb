@@ -1,10 +1,9 @@
 class Board
-  INITIAL_MARKER = ' '
   attr_accessor :squares
   
   def initialize
     squares = {}
-    (1..9).each { |key| squares[key] = Square.new(INITIAL_MARKER)}
+    (1..9).each { |key| squares[key] = Square.new }
     @squares = squares
   end
   
@@ -22,9 +21,10 @@ class Board
 end
 
 class Square
+  INITIAL_MARKER = ' '
   attr_accessor :marker
   
-  def initialize(marker)
+  def initialize(marker = INITIAL_MARKER)
     @marker = marker
   end
   
@@ -33,7 +33,7 @@ class Square
   end
 
   def unmarked?
-    marker == Board::INITIAL_MARKER
+    marker == INITIAL_MARKER
   end
 end
 
