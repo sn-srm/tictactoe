@@ -1,4 +1,15 @@
+require 'pry'
+
 class Board
+  WINNING_PAIRS = [[1, 2, 3],
+                  [4, 5, 6],
+                  [7, 8, 9],
+                  [1, 4, 7],
+                  [2, 5, 8],
+                  [3, 6, 9],
+                  [1, 5, 9],
+                  [3, 5, 7]
+                  ].freeze
   attr_accessor :squares
   
   def initialize
@@ -18,6 +29,31 @@ class Board
   def unmarked_keys
     squares.select {|k,v| v.unmarked?}.keys
   end
+
+  def someone_won
+    !!detect_round_winner
+  end
+
+  def count_human_markers(squares)
+    squares.select{|square| square.marker == TTTGame::HUMAN_MARKER }.count
+  end
+
+  def count_computer_markers(squares)
+    squares.select{|square| square.marker == TTTGame::COMPUTER_MARKER }.count
+  end
+
+  def detect_round_winner
+    WINNING_PAIRS.each do |line|
+      squares_on_line = @squares.values_at(*line)
+      if count_human_markers(squares_on_line) == 3 
+        return TTTGame::HUMAN_MARKER
+      elsif count_computer_markers(squares_on_line) == 3
+        return TTTGame::COMPUTER_MARKER
+      end           
+    end
+    nil
+end
+  
 end
 
 class Square
@@ -99,7 +135,7 @@ class TTTGame
   end
   
   def someone_won?
-    false
+    !!board.detect_round_winner
   end
   
   def board_full?
@@ -107,21 +143,44 @@ class TTTGame
   end
   
   def display_result
-    puts "nothing yet"
+    display_board
+    case board.detect_round_winner
+      when HUMAN_MARKER
+        puts "You won!"
+      when COMPUTER_MARKER
+        puts "Computer won!"
+      else
+        puts "The board is full"
+    end
+  end
+
+  def play_again?
+    answer = ''
+    loop do
+      puts "Do you want to play again? Enter 'y' or 'n"
+      answer = gets.chomp.downcase
+      break if %w[y n].include?(answer)
+      puts "Please enter 'y' or 'n'"
+    end
+    return true if answer ==  'y'
   end
   
   def play
     display_welcome_message
-    display_board
     loop do
-      human_moves
       display_board
-      break if someone_won? || board_full?
-      computer_moves
-      display_board
-       break if someone_won? || board_full?
+      loop do
+        human_moves
+        display_board
+        break if someone_won? || board_full?
+        computer_moves
+        display_board
+         break if someone_won? || board_full?
+      end
+      display_result
+      break unless play_again?
+      puts "Playing again!"
     end
-    display_result
     display_goodbye_message
   end
 end
