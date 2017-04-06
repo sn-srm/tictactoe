@@ -32,7 +32,9 @@ class Board
     puts " #{get_square_at(7)}    |   #{get_square_at(8)}     |   #{get_square_at(9)}    "
     puts '      |         |       '
     puts '________________________'
-
+    # puts "Risky Box: #{risky_box}"
+    # puts "Favorable Box: #{favorable_box}"
+    puts risky_box_test
   end
 
   def reset
@@ -63,6 +65,10 @@ class Board
     squares.select{|square| square.marker == TTTGame::COMPUTER_MARKER }.count
   end
   
+  def count_empty_markers(squares)
+    squares.select{|square| square.marker == Square::INITIAL_MARKER }.count
+  end
+  
   #renamed from detect_round_winner 
   def winning_marker
     WINNING_PAIRS.each do |line|
@@ -74,8 +80,47 @@ class Board
       end           
     end
     nil
-end
+  end
   
+  def risky_box
+    WINNING_PAIRS.each do |line|
+      squares_on_line = @squares.values_at(*line)
+      if count_human_markers(squares_on_line) == 2 && count_empty_markers(squares_on_line) == 1
+        risky_box = line.select{|x| @squares[x].marker == Square::INITIAL_MARKER}.first
+        return risky_box
+      end
+    end
+    return nil
+  end
+
+  def risky_box_test
+    WINNING_PAIRS.each do |line|
+      squares_on_line = @squares.values_at(*line)
+      if count_human_markers(squares_on_line) == 2 && count_empty_markers(squares_on_line) == 1
+        return "#{line} is risky"
+      end
+    end
+    return "no line is risky"
+  end
+  
+  def favorable_box
+    WINNING_PAIRS.each do |line|
+      squares_on_line = @squares.values_at(*line)
+      if count_computer_markers(squares_on_line) == 2 && count_empty_markers(squares_on_line) == 1
+        favorable_box = line.select{|x| @squares[x].marker == ' '}.first
+        return favorable_box
+      end
+    end
+    return nil
+  end
+
+  def risk_exists?
+    !!risky_box
+  end  
+
+  def winning_box_exists?
+    !!favorable_box
+  end
 end
 
 class Square
@@ -107,12 +152,13 @@ end
 class TTTGame
   HUMAN_MARKER = "X"
   COMPUTER_MARKER = "0"
-  attr_accessor :board, :human, :computer
+  attr_accessor :board, :human, :computer, :round, :huma
   
   def initialize
     @board = Board.new
     @human = Player.new(HUMAN_MARKER)
     @computer = Player.new(COMPUTER_MARKER)
+    @round = 0
   end
   
   def human_moves
@@ -130,7 +176,13 @@ class TTTGame
     puts "Computer's turn.........."
     pause
     clear
-    board.set_square_at(board.unmarked_keys.sample, computer.marker)
+    if board.winning_box_exists?
+      board.set_square_at(board.favorable_box, computer.marker)
+    elsif board.risk_exists?
+      board.set_square_at(board.risky_box, computer.marker)
+    else
+      board.set_square_at(board.unmarked_keys.sample, computer.marker)
+    end
   end
   
   def display_welcome_message
@@ -221,5 +273,3 @@ end
 
 game = TTTGame.new
 game.play
-
-
